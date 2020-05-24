@@ -501,8 +501,6 @@ static lv_design_res_t lv_win_header_design(lv_obj_t * header, const lv_area_t *
         lv_obj_t * win = lv_obj_get_parent(header);
         lv_win_ext_t * ext = lv_obj_get_ext_attr(win);
 
-        lv_style_int_t left = lv_obj_get_style_pad_left(header, LV_OBJ_PART_MAIN);
-
         lv_draw_label_dsc_t label_dsc;
         lv_draw_label_dsc_init(&label_dsc);
         lv_obj_init_draw_label_dsc(header, LV_OBJ_PART_MAIN, &label_dsc);
@@ -514,7 +512,7 @@ static lv_design_res_t lv_win_header_design(lv_obj_t * header, const lv_area_t *
         _lv_txt_get_size(&txt_size, ext->title_txt, label_dsc.font, label_dsc.letter_space, label_dsc.line_space, LV_COORD_MAX,
                          label_dsc.flag);
 
-        txt_area.x1 = header->coords.x1 + left;
+        txt_area.x1 = header->coords.x1 + (lv_obj_get_width(header) - txt_size.x) / 2;
         txt_area.y1 = header->coords.y1 + (lv_obj_get_height(header) - txt_size.y) / 2;
         txt_area.x2 = txt_area.x1 + txt_size.x;
         txt_area.y2 = txt_area.y1 + txt_size.y;
@@ -645,6 +643,7 @@ static void lv_win_realign(lv_obj_t * win)
 
     lv_obj_t * btn;
     lv_obj_t * btn_prev = NULL;
+    lv_obj_t * btn_next = NULL;
     lv_coord_t btn_h = lv_obj_get_height_fit(ext->header);
     lv_coord_t btn_w = ext->btn_w != 0 ? ext->btn_w : btn_h;
     lv_style_int_t header_inner = lv_obj_get_style_pad_inner(win, LV_WIN_PART_HEADER);
@@ -653,14 +652,25 @@ static void lv_win_realign(lv_obj_t * win)
     btn = lv_obj_get_child_back(ext->header, NULL);
     while(btn != NULL) {
         lv_obj_set_size(btn, btn_h, btn_w);
+        btn_next = lv_obj_get_child_back(ext->header, btn);
         if(btn_prev == NULL) {
             lv_obj_align(btn, ext->header, LV_ALIGN_IN_RIGHT_MID, -header_right, 0);
+        }
+        else if(btn_next == NULL) {
+            lv_draw_label_dsc_t label_dsc;
+            lv_draw_label_dsc_init(&label_dsc);
+            lv_obj_init_draw_label_dsc(ext->header, LV_OBJ_PART_MAIN, &label_dsc);
+            lv_point_t txt_size;
+            _lv_txt_get_size(&txt_size, ext->title_txt, label_dsc.font,
+                label_dsc.letter_space, label_dsc.line_space, LV_COORD_MAX,
+                label_dsc.flag);
+            lv_obj_align(btn, ext->header, LV_ALIGN_CENTER, -((header_inner + btn_w + txt_size.x) / 2), 0);
         }
         else {
             lv_obj_align(btn, btn_prev, LV_ALIGN_OUT_LEFT_MID, - header_inner, 0);
         }
         btn_prev = btn;
-        btn      = lv_obj_get_child_back(ext->header, btn);
+        btn      = btn_next;
     }
 
     lv_obj_set_pos(ext->header, 0, 0);
